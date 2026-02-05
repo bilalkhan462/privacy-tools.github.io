@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Compress JPG and PNG images locally in your browser. Reduce file size without uploading to any server.">
+    <title>Free Image Compressor | Reduce JPG/PNG Size - PrivacyTools</title>
+    <meta name="description" content="Free image compressor tool - reduce JPG and PNG file sizes in your browser. No uploads, privacy focused. Compress images without quality loss.">
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Fixed CDN link for browser-image-compression -->
+    <script src="https://cdn.jsdelivr.net/npm/browser-image-compression@2.0.2/dist/browser-image-compression.min.js"></script>
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <nav class="navbar">
+                <a href="../index.html" class="logo">
+                    <i class="fas fa-lock"></i>
+                    <span>PrivacyTools</span>
+                </a>
+                <div class="nav-links">
+                    <a href="../index.html#image-tools" class="nav-link">Image Tools</a>
+                    <a href="../index.html#pdf-tools" class="nav-link">PDF Tools</a>
+                    <a href="../index.html#privacy" class="nav-link">Privacy</a>
+                </div>
+            </nav>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <div class="container">
+            <div class="tool-header">
+                <h1>Image Compressor</h1>
+                <p class="tool-description">
+                    Reduce file size of JPG and PNG images while maintaining quality. 
+                    <strong>All processing happens in your browser</strong> - no files are uploaded.
+                </p>
+                
+                <div class="privacy-notice">
+                    <i class="fas fa-shield-alt"></i>
+                    <span>Your files are processed locally and never leave your browser</span>
+                </div>
+            </div>
+
+            <div class="tool-container">
+                <div class="upload-area" id="dropArea">
+                    <div class="upload-content">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                        <h3>Drop your images here</h3>
+                        <p>or click to browse</p>
+                        <p class="upload-formats">Supports: JPG, PNG (Max: 20MB per file)</p>
+                        <input type="file" id="fileInput" accept=".jpg,.jpeg,.png,.gif" multiple>
+                    </div>
+                </div>
+
+                <div class="controls">
+                    <div class="control-group">
+                        <label for="quality">Compression Quality:</label>
+                        <div class="slider-container">
+                            <input type="range" id="quality" min="0.1" max="1" step="0.1" value="0.8">
+                            <span id="qualityValue">80%</span>
+                        </div>
+                        <p class="control-help">Higher = better quality but larger file size</p>
+                    </div>
+
+                    <div class="control-group">
+                        <label for="maxWidth">Max Width (px):</label>
+                        <input type="number" id="maxWidth" min="100" max="5000" value="1920">
+                        <p class="control-help">Images will be resized if wider than this</p>
+                    </div>
+
+                    <div class="button-group">
+                        <button id="processBtn" class="btn btn-primary" disabled>
+                            <i class="fas fa-compress-arrows-alt"></i>
+                            Compress All Images
+                        </button>
+                        <button id="clearBtn" class="btn btn-secondary">
+                            <i class="fas fa-trash"></i>
+                            Clear All
+                        </button>
+                    </div>
+                </div>
+
+                <div class="progress-container hidden" id="progressContainer">
+                    <div class="progress-header">
+                        <h3>Processing...</h3>
+                        <span id="progressText">0%</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill"></div>
+                    </div>
+                </div>
+
+                <div class="file-list" id="fileList">
+                    <!-- Files will be added here dynamically -->
+                </div>
+
+                <div class="results hidden" id="results">
+                    <h3>Compression Results</h3>
+                    <div class="summary">
+                        <div class="summary-item">
+                            <span class="summary-label">Total Size Saved:</span>
+                            <span class="summary-value" id="totalSaved">0 KB</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="summary-label">Compression Ratio:</span>
+                            <span class="summary-value" id="compressionRatio">0%</span>
+                        </div>
+                    </div>
+                    
+                    <div class="results-actions">
+                        <button id="downloadAllBtn" class="btn btn-primary">
+                            <i class="fas fa-download"></i>
+                            Download All Compressed Images
+                        </button>
+                    </div>
+                </div>
+
+                <div class="error-container hidden" id="errorContainer">
+                    <!-- Errors will be shown here -->
+                </div>
+            </div>
+
+            <div class="info-box">
+                <h3><i class="fas fa-lightbulb"></i> Tips for Best Results</h3>
+                <ul>
+                    <li>For web use, 80-90% quality is usually sufficient</li>
+                    <li>Set max width to match your display requirements</li>
+                    <li>Images are processed in the order they were added</li>
+                    <li>You can process multiple images at once</li>
+                </ul>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-brand">
+                    <i class="fas fa-lock"></i>
+                    <span>PrivacyTools</span>
+                </div>
+                <p class="footer-tagline">Free, client-side image and PDF tools that respect your privacy.</p>
+                <p class="copyright">© 2024 PrivacyTools. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Image Compressor - Complete working implementation
+        document.addEventListener('DOMContentLoaded', function() {
+            // DOM Elements
+            const dropArea = document.getElementById('dropArea');
+            const fileInput = document.getElementById('fileInput');
+            const fileList = document.getElementById('fileList');
+            const processBtn = document.getElementById('processBtn');
+            const clearBtn = document.getElementById('clearBtn');
+            const downloadAllBtn = document.getElementById('downloadAllBtn');
+            const qualitySlider = document.getElementById('quality');
+            const qualityValue = document.getElementById('qualityValue');
+            const maxWidthInput = document.getElementById('maxWidth');
+            const progressContainer = document.getElementById('progressContainer');
+            const progressFill = document.getElementById('progressFill');
+            const progressText = document.getElementById('progressText');
+            const results = document.getElementById('results');
+            const totalSaved = document.getElementById('totalSaved');
+            const compressionRatio = document.getElementById('compressionRatio');
+            const errorContainer = document.getElementById('errorContainer');
+
+            // State
+            let files = [];
+            let compressedFiles = [];
+            let totalOriginalSize = 0;
+            let totalCompressedSize = 0;
+
+            // Initialize event listeners
+            function init() {
+                // Quality slider update
+                qualitySlider.addEventListener('input', updateQualityValue);
+                
+                // File input change
+                fileInput.addEventListener('change', handleFileSelect);
+                
+                // Button listeners
+                processBtn.addEventListener('click', processAllImages);
+                clearBtn.addEventListener('click', clearAll);
+                downloadAllBtn.addEventListener('click', downloadAll);
+                
+                // Drag and drop setup
+                setupDragAndDrop();
+                
+                // Update initial quality value
+                updateQualityValue();
+            }
+
+            function updateQualityValue() {
+                qualityValue.textContent = `${Math.round(qualitySlider.value * 100)}%`;
+            }
+
+            function setupDragAndDrop() {
+                // Prevent default drag behaviors
+                ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                    dropArea.addEventListener(eventName, preventDefaults, false);
+                    document.body.addEventListener(eventName, preventDefaults, false);
+                });
+                
+                // Highlight drop area when dragging over
+                ['dragenter', 'dragover'].forEach(eventName => {
+                    dropArea.addEventListener(eventName, highlight, false);
+                });
+                
+                ['dragleave', 'drop'].forEach(eventName => {
+                    dropArea.addEventListener(eventName, unhighlight, false);
+                });
+                
+                // Handle dropped files
+                dropArea.addEventListener('drop', handleDrop, false);
+                
+                // Click to browse
+                dropArea.addEventListener('click', () => {
+                    fileInput.click();
+                });
+            }
+
+            function preventDefaults(e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+
+            function highlight() {
+                dropArea.classList.add('drag-over');
+            }
+
+            function unhighlight() {
+                dropArea.classList.remove('drag-over');
+            }
+
+            function handleDrop(e) {
+                const dt = e.dataTransfer;
+                const droppedFiles = dt.files;
+                handleFileSelect({ target: { files: droppedFiles } });
+            }
+
+            function handleFileSelect(e) {
+                const selectedFiles = e.target.files;
+                hideError();
+                
+                // Convert FileList to array
+                const newFiles = Array.from(selectedFiles).filter(file => {
+                    // Accept only image files
+                    return file.type.match(/^image\/(jpeg|png|jpg|gif)$/i);
+                });
+                
+                if (newFiles.length === 0) {
+                    showError('Please select only image files (JPG, PNG, GIF)');
+                    return;
+                }
+                
+                // Check file sizes
+                const oversizedFiles = [];
+                newFiles.forEach(file => {
+                    if (file.size > 20 * 1024 * 1024) {
+                        oversizedFiles.push(file.name);
+                    }
+                });
+                
+                if (oversizedFiles.length > 0) {
+                    showError(`Some files exceed 20MB limit: ${oversizedFiles.join(', ')}`);
+                    return;
+                }
+                
+                // Add files to list
+                newFiles.forEach((file, index) => {
+                    const fileIndex = files.length;
+                    files.push(file);
+                    totalOriginalSize += file.size;
+                    
+                    // Create file item
+                    const fileItem = createFileItem(file, fileIndex);
+                    fileList.appendChild(fileItem);
+                    
+                    // Add remove button listener
+                    fileItem.querySelector('.btn-remove').addEventListener('click', () => {
+                        removeFile(fileIndex);
+                    });
+                });
+                
+                updateUI();
+            }
+
+            function createFileItem(file, index) {
+                const div = document.createElement('div');
+                div.className = 'file-item';
+                div.dataset.index = index;
+                div.innerHTML = `
+                    <div class="file-icon">
+                        <i class="fas fa-file-image"></i>
+                    </div>
+                    <div class="file-info">
+                        <div class="file-name">${escapeHtml(file.name)}</div>
+                        <div class="file-size">${formatFileSize(file.size)}</div>
+                        <div class="file-status">Ready to compress</div>
+                    </div>
+                    <div class="file-actions">
+                        <button class="btn-remove" data-index="${index}">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                `;
+                return div;
+            }
+
+            function removeFile(index) {
+                // Remove from arrays
+                const removedFile = files.splice(index, 1)[0];
+                totalOriginalSize -= removedFile.size;
+                
+                // Remove compressed file if exists
+                if (compressedFiles[index]) {
+                    totalCompressedSize -= compressedFiles[index].size;
+                    compressedFiles.splice(index, 1);
+                }
+                
+                // Remove from DOM
+                const fileItem = document.querySelector(`[data-index="${index}"]`);
+                if (fileItem) {
+                    fileItem.remove();
+                }
+                
+                // Update indices for remaining items
+                updateFileIndices();
+                
+                updateUI();
+            }
+
+            function updateFileIndices() {
+                const fileItems = document.querySelectorAll('.file-item');
+                fileItems.forEach((item, i) => {
+                    item.dataset.index = i;
+                    const removeBtn = item.querySelector('.btn-remove');
+                    if (removeBtn) removeBtn.dataset.index = i;
+                });
+            }
+
+            function updateUI() {
+                // Enable/disable process button
+                processBtn.disabled = files.length === 0;
+                
+                // Hide results if no files
+                if (files.length === 0) {
+                    results.classList.add('hidden');
+                    compressedFiles = [];
+                    totalCompressedSize = 0;
+                }
+                
+                // Clear file input value to allow selecting same file again
+                fileInput.value = '';
+            }
+
+            async function processAllImages() {
+                if (files.length === 0) return;
+                
+                showProgress(0);
+                compressedFiles = [];
+                totalCompressedSize = 0;
+                
+                const quality = parseFloat(qualitySlider.value);
+                const maxWidth = parseInt(maxWidthInput.value);
+                
+                try {
+                    for (let i = 0; i < files.length; i++) {
+                        const file = files[i];
+                        
+                        // Update progress
+                        const progress = (i / files.length) * 100;
+                        showProgress(progress);
+                        
+                        // Prepare compression options
+                        const options = {
+                            maxSizeMB: 10,
+                            maxWidthOrHeight: maxWidth,
+                            useWebWorker: true,
+                            fileType: file.type.match(/png/i) ? 'image/png' : 'image/jpeg',
+                            initialQuality: quality,
+                            alwaysKeepResolution: false
+                        };
+                        
+                        // Compress image using browser-image-compression
+                        const compressedFile = await imageCompression(file, options);
+                        
+                        // Update file item with compressed size
+                        updateFileItemStatus(i, compressedFile);
+                        
+                        // Store compressed file
+                        compressedFiles.push(compressedFile);
+                        totalCompressedSize += compressedFile.size;
+                    }
+                    
+                    // Show final progress
+                    showProgress(100);
+                    
+                    // Calculate and show results
+                    const totalSavedBytes = totalOriginalSize - totalCompressedSize;
+                    const ratio = totalOriginalSize > 0 ? 
+                        ((totalSavedBytes / totalOriginalSize) * 100).toFixed(1) : 0;
+                    
+                    totalSaved.textContent = formatFileSize(totalSavedBytes);
+                    compressionRatio.textContent = `${ratio}%`;
+                    
+                    // Show results section
+                    results.classList.remove('hidden');
+                    
+                    // Show success notification
+                    showNotification(`${files.length} image(s) compressed successfully!`, 'success');
+                    
+                } catch (error) {
+                    console.error('Compression error:', error);
+                    showError(`Error compressing images: ${error.message}`);
+                } finally {
+                    // Hide progress after a delay
+                    setTimeout(() => {
+                        progressContainer.classList.add('hidden');
+                    }, 1000);
+                }
+            }
+
+            function updateFileItemStatus(index, compressedFile) {
+                const fileItem = document.querySelector(`[data-index="${index}"]`);
+                if (fileItem) {
+                    const originalSize = files[index].size;
+                    const compressedSize = compressedFile.size;
+                    const saved = originalSize - compressedSize;
+                    const percentage = originalSize > 0 ? 
+                        ((saved / originalSize) * 100).toFixed(1) : 0;
+                    
+                    const statusElement = fileItem.querySelector('.file-status');
+                    if (statusElement) {
+                        statusElement.innerHTML = `
+                            <div><strong>${formatFileSize(originalSize)} → ${formatFileSize(compressedSize)}</strong></div>
+                            <div style="color: ${saved > 0 ? '#4cc9f0' : '#f72585'}; font-size: 0.875rem;">
+                                ${saved > 0 ? '✓ Saved ' : 'Increased '}${formatFileSize(Math.abs(saved))} (${percentage}%)
+                            </div>
+                        `;
+                    }
+                }
+            }
+
+            function showProgress(percentage) {
+                progressContainer.classList.remove('hidden');
+                progressFill.style.width = `${percentage}%`;
+                progressText.textContent = `${Math.round(percentage)}%`;
+            }
+
+            function downloadAll() {
+                if (compressedFiles.length === 0) return;
+                
+                compressedFiles.forEach((file, index) => {
+                    const url = URL.createObjectURL(file);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `compressed_${files[index].name}`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                });
+                
+                showNotification('Downloads started!', 'success');
+            }
+
+            function clearAll() {
+                files = [];
+                compressedFiles = [];
+                totalOriginalSize = 0;
+                totalCompressedSize = 0;
+                
+                fileList.innerHTML = '';
+                results.classList.add('hidden');
+                hideError();
+                progressContainer.classList.add('hidden');
+                
+                updateUI();
+            }
+
+            function showError(message) {
+                errorContainer.classList.remove('hidden');
+                errorContainer.innerHTML = `
+                    <i class="fas fa-exclamation-circle"></i>
+                    <span>${escapeHtml(message)}</span>
+                `;
+                
+                // Auto-hide error after 5 seconds
+                setTimeout(() => {
+                    hideError();
+                }, 5000);
+            }
+
+            function hideError() {
+                errorContainer.classList.add('hidden');
+            }
+
+            function showNotification(message, type = 'info') {
+                // Create notification element
+                const notification = document.createElement('div');
+                notification.className = `notification notification-${type}`;
+                notification.style.cssText = `
+                    position: fixed;
+                    top: 20px;
+                    right: 20px;
+                    padding: 1rem 1.5rem;
+                    background: ${type === 'success' ? '#4cc9f0' : '#f72585'};
+                    color: white;
+                    border-radius: 8px;
+                    display: flex;
+                    align-items: center;
+                    gap: 10px;
+                    z-index: 9999;
+                    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+                    animation: slideIn 0.3s ease;
+                `;
+                
+                const icon = type === 'success' ? 'check-circle' : 'exclamation-circle';
+                notification.innerHTML = `
+                    <i class="fas fa-${icon}"></i>
+                    <span>${escapeHtml(message)}</span>
+                    <button class="notification-close" style="background: none; border: none; color: inherit; margin-left: 10px; cursor: pointer;">
+                        <i class="fas fa-times"></i>
+                    </button>
+                `;
+                
+                // Add animation style if not already present
+                if (!document.querySelector('#notification-styles')) {
+                    const style = document.createElement('style');
+                    style.id = 'notification-styles';
+                    style.textContent = `
+                        @keyframes slideIn {
+                            from { transform: translateX(100%); opacity: 0; }
+                            to { transform: translateX(0); opacity: 1; }
+                        }
+                    `;
+                    document.head.appendChild(style);
+                }
+                
+                document.body.appendChild(notification);
+                
+                // Close button
+                notification.querySelector('.notification-close').addEventListener('click', () => {
+                    notification.remove();
+                });
+                
+                // Auto remove after 5 seconds
+                setTimeout(() => {
+                    if (notification.parentNode) {
+                        notification.remove();
+                    }
+                }, 5000);
+            }
+
+            // Utility functions
+            function formatFileSize(bytes) {
+                if (bytes === 0) return '0 Bytes';
+                const k = 1024;
+                const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+                const i = Math.floor(Math.log(bytes) / Math.log(k));
+                return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+            }
+
+            function escapeHtml(text) {
+                const div = document.createElement('div');
+                div.textContent = text;
+                return div.innerHTML;
+            }
+
+            // Initialize the compressor
+            init();
+        });
+    </script>
+</body>
+</html>

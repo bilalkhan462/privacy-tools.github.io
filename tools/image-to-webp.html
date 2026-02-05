@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Convert JPG, PNG images to WebP format locally in your browser. No file uploads, privacy guaranteed.">
+    <title>Free WebP Converter | Image to WebP - PrivacyTools</title>
+    <meta name="description" content="Free WebP converter - convert JPG/PNG to WebP format in browser. No uploads, privacy secure. Optimize images for faster websites.">
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <nav class="navbar">
+                <a href="../index.html" class="logo">
+                    <i class="fas fa-lock"></i>
+                    <span>PrivacyTools</span>
+                </a>
+                <div class="nav-links">
+                    <a href="../index.html#image-tools" class="nav-link">Image Tools</a>
+                    <a href="../index.html#pdf-tools" class="nav-link">PDF Tools</a>
+                    <a href="../index.html#privacy" class="nav-link">Privacy</a>
+                </div>
+            </nav>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <div class="container">
+            <div class="tool-header">
+                <h1>Image to WebP Converter</h1>
+                <p class="tool-description">
+                    Convert JPG and PNG images to modern WebP format for better web performance. 
+                    <strong>All processing happens in your browser</strong> - no files are uploaded.
+                </p>
+                
+                <div class="privacy-notice">
+                    <i class="fas fa-shield-alt"></i>
+                    <span>Your files are processed locally and never leave your browser</span>
+                </div>
+            </div>
+
+            <div class="tool-container">
+                <div class="upload-area" id="dropArea">
+                    <div class="upload-content">
+                        <i class="fas fa-file-image"></i>
+                        <h3>Drop your images here</h3>
+                        <p>or click to browse</p>
+                        <p class="upload-formats">Supports: JPG, PNG, GIF (Max: 20MB per file)</p>
+                        <input type="file" id="fileInput" accept=".jpg,.jpeg,.png,.gif" multiple>
+                    </div>
+                </div>
+
+                <div class="controls">
+                    <div class="control-group">
+                        <label for="quality">WebP Quality:</label>
+                        <div class="slider-container">
+                            <input type="range" id="quality" min="0.1" max="1" step="0.1" value="0.8">
+                            <span id="qualityValue">80%</span>
+                        </div>
+                        <p class="control-help">Higher = better quality but larger file size</p>
+                    </div>
+
+                    <div class="control-group">
+                        <label for="lossless">
+                            <input type="checkbox" id="lossless">
+                            Lossless Compression
+                        </label>
+                        <p class="control-help">Preserve exact image quality (larger files)</p>
+                    </div>
+
+                    <div class="button-group">
+                        <button id="convertBtn" class="btn btn-primary" disabled>
+                            <i class="fas fa-exchange-alt"></i>
+                            Convert to WebP
+                        </button>
+                        <button id="clearBtn" class="btn btn-secondary">
+                            <i class="fas fa-trash"></i>
+                            Clear All
+                        </button>
+                    </div>
+                </div>
+
+                <div class="progress-container hidden" id="progressContainer">
+                    <div class="progress-header">
+                        <h3>Converting to WebP...</h3>
+                        <span id="progressText">0%</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill"></div>
+                    </div>
+                </div>
+
+                <div class="file-list" id="fileList">
+                    <!-- Files will be added here dynamically -->
+                </div>
+
+                <div class="results hidden" id="results">
+                    <h3>Conversion Results</h3>
+                    <div class="summary">
+                        <div class="summary-item">
+                            <span class="summary-label">Files Converted:</span>
+                            <span class="summary-value" id="convertedCount">0</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="summary-label">Total Size Saved:</span>
+                            <span class="summary-value" id="totalSaved">0 KB</span>
+                        </div>
+                    </div>
+                    
+                    <div class="results-actions">
+                        <button id="downloadAllBtn" class="btn btn-primary">
+                            <i class="fas fa-download"></i>
+                            Download All WebP Images
+                        </button>
+                    </div>
+                </div>
+
+                <div class="error-container hidden" id="errorContainer">
+                    <!-- Errors will be shown here -->
+                </div>
+            </div>
+
+            <div class="info-box">
+                <h3><i class="fas fa-lightbulb"></i> About WebP Format</h3>
+                <ul>
+                    <li><strong>26% smaller</strong> than PNG files on average</li>
+                    <li><strong>25-34% smaller</strong> than JPG files with same quality</li>
+                    <li>Supports both lossy and lossless compression</li>
+                    <li>Supported by all modern browsers</li>
+                    <li>Perfect for web performance optimization</li>
+                </ul>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-brand">
+                    <i class="fas fa-lock"></i>
+                    <span>PrivacyTools</span>
+                </div>
+                <p class="footer-tagline">Free, client-side image and PDF tools that respect your privacy.</p>
+                <p class="copyright">© 2024 PrivacyTools. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // WebP Converter - Complete working implementation
+        document.addEventListener('DOMContentLoaded', function() {
+            // DOM Elements
+            const dropArea = document.getElementById('dropArea');
+            const fileInput = document.getElementById('fileInput');
+            const fileList = document.getElementById('fileList');
+            const convertBtn = document.getElementById('convertBtn');
+            const clearBtn = document.getElementById('clearBtn');
+            const downloadAllBtn = document.getElementById('downloadAllBtn');
+            const qualitySlider = document.getElementById('quality');
+            const qualityValue = document.getElementById('qualityValue');
+            const losslessCheckbox = document.getElementById('lossless');
+            const progressContainer = document.getElementById('progressContainer');
+            const progressFill = document.getElementById('progressFill');
+            const progressText = document.getElementById('progressText');
+            const results = document.getElementById('results');
+            const convertedCount = document.getElementById('convertedCount');
+            const totalSaved = document.getElementById('totalSaved');
+            const errorContainer = document.getElementById('errorContainer');
+
+            // State
+            let files = [];
+            let convertedFiles = [];
+            let totalOriginalSize = 0;
+            let totalConvertedSize = 0;
+
+            // Initialize
+            function init() {
+                // Quality slider update
+                qualitySlider.addEventListener('input', updateQualityValue);
+                
+                // File input change
+                fileInput.addEventListener('change', handleFileSelect);
+                
+                // Button listeners
+                convertBtn.addEventListener('click', convertToWebP);
+                clearBtn.addEventListener('click', clearAll);
+                downloadAllBtn.addEventListener('click', downloadAll);
+                
+                // Drag and drop setup
+                setupDragAndDrop();
+                
+                // Update initial quality value
+                updateQualityValue();
+            }
+
+            function updateQualityValue() {
+                qualityValue.textContent = `${Math.round(qualitySlider.value * 100)}%`;
+            }
+
+            function setupDragAndDrop() {
+                // Prevent default drag behaviors
+                ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                    dropArea.addEventListener(eventName, preventDefaults, false);
+                    document.body.addEventListener(eventName, preventDefaults, false);
+                });
+                
+                // Highlight drop area when dragging over
+                ['dragenter', 'dragover'].forEach(eventName => {
+                    dropArea.addEventListener(eventName, highlight, false);
+                });
+                
+                ['dragleave', 'drop'].forEach(eventName => {
+                    dropArea.addEventListener(eventName, unhighlight, false);
+                });
+                
+                // Handle dropped files
+                dropArea.addEventListener('drop', handleDrop, false);
+                
+                // Click to browse
+                dropArea.addEventListener('click', () => {
+                    fileInput.click();
+                });
+            }
+
+            function preventDefaults(e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+
+            function highlight() {
+                dropArea.classList.add('drag-over');
+            }
+
+            function unhighlight() {
+                dropArea.classList.remove('drag-over');
+            }
+
+            function handleDrop(e) {
+                const dt = e.dataTransfer;
+                const droppedFiles = dt.files;
+                handleFileSelect({ target: { files: droppedFiles } });
+            }
+
+            function handleFileSelect(e) {
+                const selectedFiles = e.target.files;
+                hideError();
+                
+                // Convert FileList to array
+                const newFiles = Array.from(selectedFiles).filter(file => {
+                    // Accept only image files
+                    return file.type.match(/^image\/(jpeg|png|jpg|gif)$/i);
+                });
+                
+                if (newFiles.length === 0) {
+                    showError('Please select only image files (JPG, PNG, GIF)');
+                    return;
+                }
+                
+                // Check file sizes
+                const oversizedFiles = [];
+                newFiles.forEach(file => {
+                    if (file.size > 20 * 1024 * 1024) {
+                        oversizedFiles.push(file.name);
+                    }
+                });
+                
+                if (oversizedFiles.length > 0) {
+                    showError(`Some files exceed 20MB limit: ${oversizedFiles.join(', ')}`);
+                    return;
+                }
+                
+                // Add files to list
+                newFiles.forEach((file, index) => {
+                    const fileIndex = files.length;
+                    files.push(file);
+                    totalOriginalSize += file.size;
+                    
+                    // Create file item
+                    const fileItem = createFileItem(file, fileIndex);
+                    fileList.appendChild(fileItem);
+                    
+                    // Add remove button listener
+                    fileItem.querySelector('.btn-remove').addEventListener('click', () => {
+                        removeFile(fileIndex);
+                    });
+                });
+                
+                updateUI();
+            }
+
+            function createFileItem(file, index) {
+                const div = document.createElement('div');
+                div.className = 'file-item';
+                div.dataset.index = index;
+                div.innerHTML = `
+                    <div class="file-icon">
+                        <i class="fas fa-file-image"></i>
+                    </div>
+                    <div class="file-info">
+                        <div class="file-name">${escapeHtml(file.name)}</div>
+                        <div class="file-size">${formatFileSize(file.size)}</div>
+                        <div class="file-status">Ready to convert</div>
+                    </div>
+                    <div class="file-actions">
+                        <button class="btn-remove" data-index="${index}">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                `;
+                return div;
+            }
+
+            function removeFile(index) {
+                // Remove from arrays
+                const removedFile = files.splice(index, 1)[0];
+                totalOriginalSize -= removedFile.size;
+                
+                // Remove converted file if exists
+                if (convertedFiles[index]) {
+                    totalConvertedSize -= convertedFiles[index].size;
+                    convertedFiles.splice(index, 1);
+                }
+                
+                // Remove from DOM
+                const fileItem = document.querySelector(`[data-index="${index}"]`);
+                if (fileItem) {
+                    fileItem.remove();
+                }
+                
+                // Update indices for remaining items
+                updateFileIndices();
+                
+                updateUI();
+            }
+
+            function updateFileIndices() {
+                const fileItems = document.querySelectorAll('.file-item');
+                fileItems.forEach((item, i) => {
+                    item.dataset.index = i;
+                    const removeBtn = item.querySelector('.btn-remove');
+                    if (removeBtn) removeBtn.dataset.index = i;
+                });
+            }
+
+            function updateUI() {
+                // Enable/disable convert button
+                convertBtn.disabled = files.length === 0;
+                
+                // Hide results if no files
+                if (files.length === 0) {
+                    results.classList.add('hidden');
+                    convertedFiles = [];
+                    totalConvertedSize = 0;
+                }
+                
+                // Clear file input value to allow selecting same file again
+                fileInput.value = '';
+            }
+
+            async function convertToWebP() {
+                if (files.length === 0) return;
+                
+                showProgress(0);
+                convertedFiles = [];
+                totalConvertedSize = 0;
+                
+                const quality = parseFloat(qualitySlider.value);
+                const lossless = losslessCheckbox.checked;
+                
+                try {
+                    for (let i = 0; i < files.length; i++) {
+                        const file = files[i];
+                        
+                        // Update progress
+                        const progress = (i / files.length) * 100;
+                        showProgress(progress);
+                        
+                        // Convert to WebP
+                        const webpFile = await convertImageToWebP(file, quality, lossless);
+                        
+                        // Update file item with converted size
+                        updateFileItemStatus(i, webpFile);
+                        
+                        // Store converted file
+                        convertedFiles.push(webpFile);
+                        totalConvertedSize += webpFile.size;
+                    }
+                    
+                    // Show final progress
+                    showProgress(100);
+                    
+                    // Calculate results
+                    const totalSavedBytes = totalOriginalSize - totalConvertedSize;
+                    convertedCount.textContent = files.length;
+                    totalSaved.textContent = formatFileSize(totalSavedBytes);
+                    
+                    // Show results section
+                    results.classList.remove('hidden');
+                    
+                    // Show success notification
+                    showNotification(`${files.length} image(s) converted to WebP!`, 'success');
+                    
+                } catch (error) {
+                    console.error('Conversion error:', error);
+                    showError(`Error converting images: ${error.message}`);
+                } finally {
+                    // Hide progress after a delay
+                    setTimeout(() => {
+                        progressContainer.classList.add('hidden');
+                    }, 1000);
+                }
+            }
+
+            function convertImageToWebP(file, quality, lossless) {
+                return new Promise((resolve, reject) => {
+                    const img = new Image();
+                    const url = URL.createObjectURL(file);
+                    
+                    img.onload = () => {
+                        URL.revokeObjectURL(url);
+                        
+                        const canvas = document.createElement('canvas');
+                        canvas.width = img.width;
+                        canvas.height = img.height;
+                        
+                        const ctx = canvas.getContext('2d');
+                        
+                        // Draw white background for transparent images
+                        if (!file.type.includes('jpeg') && !file.type.includes('jpg')) {
+                            ctx.fillStyle = '#FFFFFF';
+                            ctx.fillRect(0, 0, canvas.width, canvas.height);
+                        }
+                        
+                        // Draw the image
+                        ctx.drawImage(img, 0, 0);
+                        
+                        // Convert to WebP
+                        const webpQuality = lossless ? 1 : quality;
+                        const webpDataUrl = canvas.toDataURL('image/webp', webpQuality);
+                        const webpBlob = dataURLToBlob(webpDataUrl);
+                        
+                        // Create file object
+                        const webpFile = new File([webpBlob], 
+                            `${getFileNameWithoutExtension(file.name)}.webp`, 
+                            { type: 'image/webp' }
+                        );
+                        
+                        resolve(webpFile);
+                    };
+                    
+                    img.onerror = () => {
+                        URL.revokeObjectURL(url);
+                        reject(new Error('Failed to load image'));
+                    };
+                    
+                    img.src = url;
+                });
+            }
+
+            function dataURLToBlob(dataURL) {
+                const arr = dataURL.split(',');
+                const mime = arr[0].match(/:(.*?);/)[1];
+                const bstr = atob(arr[1]);
+                const n = bstr.length;
+                const u8arr = new Uint8Array(n);
+                
+                for (let i = 0; i < n; i++) {
+                    u8arr[i] = bstr.charCodeAt(i);
+                }
+                
+                return new Blob([u8arr], { type: mime });
+            }
+
+            function updateFileItemStatus(index, webpFile) {
+                const fileItem = document.querySelector(`[data-index="${index}"]`);
+                if (fileItem) {
+                    const originalSize = files[index].size;
+                    const convertedSize = webpFile.size;
+                    const saved = originalSize - convertedSize;
+                    const percentage = originalSize > 0 ? 
+                        ((saved / originalSize) * 100).toFixed(1) : 0;
+                    
+                    const statusElement = fileItem.querySelector('.file-status');
+                    if (statusElement) {
+                        statusElement.innerHTML = `
+                            <div><strong>${formatFileSize(originalSize)} → ${formatFileSize(convertedSize)}</strong></div>
+                            <div style="color: ${saved > 0 ? '#4cc9f0' : '#f72585'}; font-size: 0.875rem;">
+                                ${saved > 0 ? '✓ Saved ' : 'Increased '}${formatFileSize(Math.abs(saved))} (${percentage}%)
+                            </div>
+                        `;
+                    }
+                }
+            }
+
+            function showProgress(percentage) {
+                progressContainer.classList.remove('hidden');
+                progressFill.style.width = `${percentage}%`;
+                progressText.textContent = `${Math.round(percentage)}%`;
+            }
+
+            function downloadAll() {
+                if (convertedFiles.length === 0) return;
+                
+                convertedFiles.forEach((file, index) => {
+                    const url = URL.createObjectURL(file);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = file.name;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                });
+                
+                showNotification('Downloads started!', 'success');
+            }
+
+            function clearAll() {
+                files = [];
+                convertedFiles = [];
+                totalOriginalSize = 0;
+                totalConvertedSize = 0;
+                
+                fileList.innerHTML = '';
+                results.classList.add('hidden');
+                hideError();
+                progressContainer.classList.add('hidden');
+                
+                updateUI();
+            }
+
+            function showError(message) {
+                errorContainer.classList.remove('hidden');
+                errorContainer.innerHTML = `
+                    <i class="fas fa-exclamation-circle"></i>
+                    <span>${escapeHtml(message)}</span>
+                `;
+                
+                // Auto-hide error after 5 seconds
+                setTimeout(() => {
+                    hideError();
+                }, 5000);
+            }
+
+            function hideError() {
+                errorContainer.classList.add('hidden');
+            }
+
+            function showNotification(message, type = 'info') {
+                const notification = document.createElement('div');
+                notification.className = `notification notification-${type}`;
+                notification.style.cssText = `
+                    position: fixed;
+                    top: 20px;
+                    right: 20px;
+                    padding: 1rem 1.5rem;
+                    background: ${type === 'success' ? '#4cc9f0' : '#f72585'};
+                    color: white;
+                    border-radius: 8px;
+                    display: flex;
+                    align-items: center;
+                    gap: 10px;
+                    z-index: 9999;
+                    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+                    animation: slideIn 0.3s ease;
+                `;
+                
+                const icon = type === 'success' ? 'check-circle' : 'exclamation-circle';
+                notification.innerHTML = `
+                    <i class="fas fa-${icon}"></i>
+                    <span>${escapeHtml(message)}</span>
+                    <button class="notification-close" style="background: none; border: none; color: inherit; margin-left: 10px; cursor: pointer;">
+                        <i class="fas fa-times"></i>
+                    </button>
+                `;
+                
+                if (!document.querySelector('#notification-styles')) {
+                    const style = document.createElement('style');
+                    style.id = 'notification-styles';
+                    style.textContent = `
+                        @keyframes slideIn {
+                            from { transform: translateX(100%); opacity: 0; }
+                            to { transform: translateX(0); opacity: 1; }
+                        }
+                    `;
+                    document.head.appendChild(style);
+                }
+                
+                document.body.appendChild(notification);
+                
+                notification.querySelector('.notification-close').addEventListener('click', () => {
+                    notification.remove();
+                });
+                
+                setTimeout(() => {
+                    if (notification.parentNode) {
+                        notification.remove();
+                    }
+                }, 5000);
+            }
+
+            // Utility functions
+            function formatFileSize(bytes) {
+                if (bytes === 0) return '0 Bytes';
+                const k = 1024;
+                const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+                const i = Math.floor(Math.log(bytes) / Math.log(k));
+                return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+            }
+
+            function escapeHtml(text) {
+                const div = document.createElement('div');
+                div.textContent = text;
+                return div.innerHTML;
+            }
+
+            function getFileNameWithoutExtension(filename) {
+                return filename.replace(/\.[^/.]+$/, "");
+            }
+
+            // Initialize the converter
+            init();
+        });
+    </script>
+</body>
+</html>

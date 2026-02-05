@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://privacy-tools.github.io/sitemap.xml

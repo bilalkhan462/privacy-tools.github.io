@@ -1,0 +1,1682 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Highlight text in PDFs and export as Markdown. All processing happens locally in your browser.">
+    <title>PDF Highlighter & Markdown Exporter - PrivacyTools</title>
+    <style>
+        /* Base Styles */
+        :root {
+            --primary-color: #4a6ee0;
+            --primary-dark: #3a5ad0;
+            --secondary-color: #6c757d;
+            --success-color: #28a745;
+            --info-color: #17a2b8;
+            --warning-color: #ffc107;
+            --danger-color: #dc3545;
+            --light-color: #f8f9fa;
+            --dark-color: #343a40;
+            --gray: #6c757d;
+            --gray-light: #e9ecef;
+            --border-radius: 8px;
+            --box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            --transition: all 0.3s ease;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f5f7fa;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* Header Styles */
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 1rem 0;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+            color: white;
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        .logo i {
+            font-size: 1.8rem;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+        }
+
+        .nav-link {
+            color: white;
+            text-decoration: none;
+            font-weight: 500;
+            padding: 0.5rem 1rem;
+            border-radius: var(--border-radius);
+            transition: var(--transition);
+        }
+
+        .nav-link:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        /* Main Content */
+        .main-content {
+            padding: 2rem 0;
+            min-height: calc(100vh - 200px);
+        }
+
+        .tool-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .tool-header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            color: var(--dark-color);
+        }
+
+        .tool-description {
+            font-size: 1.1rem;
+            color: var(--gray);
+            max-width: 800px;
+            margin: 0 auto 1rem;
+        }
+
+        .privacy-notice {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 0.75rem 1.5rem;
+            background: linear-gradient(135deg, #4a6ee0 0%, #3a5ad0 100%);
+            color: white;
+            border-radius: 50px;
+            font-weight: 500;
+            margin-top: 1rem;
+        }
+
+        .privacy-notice i {
+            font-size: 1.2rem;
+        }
+
+        /* Upload Area */
+        .upload-area {
+            background: white;
+            border: 3px dashed var(--primary-color);
+            border-radius: var(--border-radius);
+            padding: 3rem 2rem;
+            text-align: center;
+            cursor: pointer;
+            transition: var(--transition);
+            margin-bottom: 2rem;
+        }
+
+        .upload-area:hover {
+            border-color: var(--primary-dark);
+            background-color: #f8f9ff;
+            transform: translateY(-2px);
+            box-shadow: var(--box-shadow);
+        }
+
+        .upload-area.drag-over {
+            border-color: var(--success-color);
+            background-color: #f0fff4;
+        }
+
+        .upload-content i {
+            font-size: 4rem;
+            color: var(--primary-color);
+            margin-bottom: 1rem;
+        }
+
+        .upload-content h3 {
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+            color: var(--dark-color);
+        }
+
+        .upload-content p {
+            color: var(--gray);
+            margin-bottom: 0.5rem;
+        }
+
+        .upload-formats {
+            font-size: 0.9rem;
+            color: var(--secondary-color);
+        }
+
+        #fileInput {
+            display: none;
+        }
+
+        /* PDF Viewer */
+        #pdfViewer {
+            background: white;
+            border-radius: var(--border-radius);
+            padding: 1.5rem;
+            box-shadow: var(--box-shadow);
+            margin-bottom: 2rem;
+        }
+
+        .viewer-header {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--gray-light);
+        }
+
+        .viewer-controls {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .page-info {
+            font-weight: bold;
+            color: var(--primary-color);
+            font-size: 1.1rem;
+            min-width: 80px;
+            text-align: center;
+            background: var(--light-color);
+            padding: 0.5rem 1rem;
+            border-radius: var(--border-radius);
+        }
+
+        .zoom-controls {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: var(--light-color);
+            padding: 0.5rem;
+            border-radius: var(--border-radius);
+        }
+
+        #zoomLevel {
+            min-width: 50px;
+            text-align: center;
+            font-weight: 500;
+        }
+
+        .highlight-controls {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .color-picker {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .color-picker label {
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .color-options {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .color-option {
+            width: 30px;
+            height: 30px;
+            border: 2px solid transparent;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .color-option:hover {
+            transform: scale(1.1);
+        }
+
+        .color-option.active {
+            border-color: var(--dark-color);
+            transform: scale(1.1);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+
+        /* Button Styles */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: var(--border-radius);
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            text-decoration: none;
+        }
+
+        .btn i {
+            font-size: 1.1rem;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(74, 110, 224, 0.4);
+        }
+
+        .btn-secondary {
+            background: var(--light-color);
+            color: var(--dark-color);
+            border: 1px solid var(--gray-light);
+        }
+
+        .btn-secondary:hover {
+            background: var(--gray-light);
+            transform: translateY(-2px);
+        }
+
+        .btn-danger {
+            background: var(--danger-color);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #c82333;
+            transform: translateY(-2px);
+        }
+
+        /* Viewer Container */
+        .viewer-container {
+            display: grid;
+            grid-template-columns: 1fr 350px;
+            gap: 1.5rem;
+            height: 70vh;
+        }
+
+        @media (max-width: 1200px) {
+            .viewer-container {
+                grid-template-columns: 1fr;
+                height: auto;
+            }
+        }
+
+        .pdf-canvas-container {
+            position: relative;
+            background: #f8f9fa;
+            border-radius: var(--border-radius);
+            overflow: auto;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 1rem;
+        }
+
+        #pdfCanvas {
+            max-width: 100%;
+            max-height: 100%;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            background: white;
+            cursor: crosshair;
+        }
+
+        .selection-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            overflow-y: auto;
+        }
+
+        .sidebar-section {
+            background: white;
+            border-radius: var(--border-radius);
+            padding: 1.5rem;
+            box-shadow: var(--box-shadow);
+        }
+
+        .sidebar-section h3 {
+            margin-top: 0;
+            margin-bottom: 1rem;
+            color: var(--primary-color);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .sidebar-section h3 i {
+            font-size: 1.2rem;
+        }
+
+        .highlights-list {
+            max-height: 300px;
+            overflow-y: auto;
+            padding-right: 0.5rem;
+        }
+
+        .no-highlights {
+            text-align: center;
+            padding: 2rem;
+            color: var(--gray);
+        }
+
+        .no-highlights i {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        .highlight-item {
+            background: var(--light-color);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+            border-left: 4px solid;
+            transition: var(--transition);
+        }
+
+        .highlight-item:hover {
+            background: #e9ecef;
+            transform: translateX(2px);
+        }
+
+        .highlight-item.yellow { border-left-color: #FFEB3B; }
+        .highlight-item.green { border-left-color: #4CAF50; }
+        .highlight-item.blue { border-left-color: #2196F3; }
+        .highlight-item.pink { border-left-color: #E91E63; }
+        .highlight-item.orange { border-left-color: #FF9800; }
+
+        .highlight-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 0.5rem;
+        }
+
+        .highlight-page {
+            font-size: 0.875rem;
+            color: var(--primary-color);
+            font-weight: 600;
+            background: rgba(67, 97, 238, 0.1);
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+        }
+
+        .highlight-color {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+        }
+
+        .highlight-text {
+            line-height: 1.5;
+            color: var(--dark-color);
+            margin-bottom: 0.5rem;
+            font-style: italic;
+            background: rgba(255, 255, 255, 0.7);
+            padding: 0.5rem;
+            border-radius: 4px;
+            border-left: 3px solid currentColor;
+        }
+
+        .highlight-actions {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+
+        .btn-tiny {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.75rem;
+        }
+
+        /* Progress Container */
+        .progress-container {
+            background: white;
+            border-radius: var(--border-radius);
+            padding: 1.5rem;
+            box-shadow: var(--box-shadow);
+            margin-bottom: 1rem;
+        }
+
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .progress-bar {
+            height: 8px;
+            background: var(--gray-light);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4a6ee0 0%, #764ba2 100%);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        /* Error Container */
+        .error-container {
+            background: linear-gradient(135deg, #f72585 0%, #b5179e 100%);
+            color: white;
+            padding: 1rem 1.5rem;
+            border-radius: var(--border-radius);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 1rem;
+        }
+
+        .error-container i {
+            font-size: 1.2rem;
+        }
+
+        /* Info Box */
+        .info-box {
+            background: white;
+            border-radius: var(--border-radius);
+            padding: 2rem;
+            box-shadow: var(--box-shadow);
+            margin-top: 2rem;
+        }
+
+        .info-box h3 {
+            color: var(--primary-color);
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .info-box ul {
+            padding-left: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .info-box li {
+            margin-bottom: 0.5rem;
+        }
+
+        .info-box ul ul {
+            margin-top: 0.5rem;
+            margin-bottom: 0;
+        }
+
+        .keyboard-hint {
+            display: inline-block;
+            background: var(--dark-color);
+            color: white;
+            padding: 0.1rem 0.4rem;
+            border-radius: 3px;
+            font-family: monospace;
+            font-size: 0.8rem;
+            margin: 0 0.25rem;
+        }
+
+        /* Footer */
+        .footer {
+            background: var(--dark-color);
+            color: white;
+            padding: 2rem 0;
+            text-align: center;
+        }
+
+        .footer-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .footer-brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        .footer-brand i {
+            font-size: 1.8rem;
+            color: #4a6ee0;
+        }
+
+        .footer-tagline {
+            color: var(--gray-light);
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .copyright {
+            color: var(--gray);
+            font-size: 0.9rem;
+            margin-top: 1rem;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .viewer-header {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .viewer-controls, .highlight-controls {
+                justify-content: center;
+            }
+            
+            .export-actions {
+                flex-direction: column;
+            }
+            
+            .tool-header h1 {
+                font-size: 2rem;
+            }
+            
+            .nav-links {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+        }
+
+        /* Selection overlay */
+        .text-selection {
+            position: absolute;
+            background: rgba(255, 235, 59, 0.3);
+            border: 1px solid rgba(255, 235, 59, 0.5);
+            pointer-events: none;
+            z-index: 10;
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <nav class="navbar">
+                <a href="../index.html" class="logo">
+                    <i class="fas fa-lock"></i>
+                    <span>PrivacyTools</span>
+                </a>
+                <div class="nav-links">
+                    <a href="../index.html#image-tools" class="nav-link">Image Tools</a>
+                    <a href="../index.html#pdf-tools" class="nav-link">PDF Tools</a>
+                    <a href="../index.html#privacy" class="nav-link">Privacy</a>
+                </div>
+            </nav>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <div class="container">
+            <div class="tool-header">
+                <h1>PDF Highlighter & Exporter</h1>
+                <p class="tool-description">
+                    Highlight text in PDFs and export your highlights. 
+                    <strong>All processing happens in your browser</strong> - no files are uploaded.
+                </p>
+                
+                <div class="privacy-notice">
+                    <i class="fas fa-shield-alt"></i>
+                    <span>Your files are processed locally and never leave your browser</span>
+                </div>
+            </div>
+
+            <div class="tool-container">
+                <div class="upload-area" id="dropArea">
+                    <div class="upload-content">
+                        <i class="fas fa-highlighter"></i>
+                        <h3>Drop your PDF here</h3>
+                        <p>or click to browse</p>
+                        <p class="upload-formats">Supports: PDF files (Max: 50MB)</p>
+                        <input type="file" id="fileInput" accept=".pdf">
+                    </div>
+                </div>
+
+                <div id="pdfViewer" class="hidden">
+                    <div class="viewer-header">
+                        <div class="viewer-controls">
+                            <button id="prevPage" class="btn btn-secondary">
+                                <i class="fas fa-chevron-left"></i> Previous
+                            </button>
+                            <div class="page-info">
+                                <span id="currentPage">1</span> / <span id="totalPages">1</span>
+                            </div>
+                            <button id="nextPage" class="btn btn-secondary">
+                                Next <i class="fas fa-chevron-right"></i>
+                            </button>
+                            <div class="zoom-controls">
+                                <button id="zoomOut" class="btn btn-secondary">
+                                    <i class="fas fa-search-minus"></i>
+                                </button>
+                                <span id="zoomLevel">100%</span>
+                                <button id="zoomIn" class="btn btn-secondary">
+                                    <i class="fas fa-search-plus"></i>
+                                </button>
+                            </div>
+                            
+                            <!-- Download Button -->
+                            <button id="downloadPdf" class="btn btn-primary">
+                                <i class="fas fa-download"></i> Download PDF
+                            </button>
+                        </div>
+                        <div class="highlight-controls">
+                            <div class="color-picker">
+                                <label>Highlight Color:</label>
+                                <div class="color-options">
+                                    <button class="color-option active" data-color="yellow" style="background-color: #FFEB3B;"></button>
+                                    <button class="color-option" data-color="green" style="background-color: #4CAF50;"></button>
+                                    <button class="color-option" data-color="blue" style="background-color: #2196F3;"></button>
+                                    <button class="color-option" data-color="pink" style="background-color: #E91E63;"></button>
+                                    <button class="color-option" data-color="orange" style="background-color: #FF9800;"></button>
+                                </div>
+                            </div>
+                            <button id="toggleHighlight" class="btn btn-primary">
+                                <i class="fas fa-highlighter"></i> Highlight Mode: <span id="highlightStatus">ON</span>
+                            </button>
+                            <button id="clearHighlights" class="btn btn-secondary">
+                                <i class="fas fa-trash"></i> Clear All
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="viewer-container">
+                        <div class="pdf-canvas-container">
+                            <canvas id="pdfCanvas"></canvas>
+                            <div class="selection-overlay" id="selectionOverlay"></div>
+                        </div>
+                        
+                        <div class="sidebar">
+                            <div class="sidebar-section">
+                                <h3><i class="fas fa-sticky-note"></i> Highlights</h3>
+                                <div class="highlights-list" id="highlightsList">
+                                    <div class="no-highlights">
+                                        <i class="fas fa-highlighter"></i>
+                                        <p>No highlights yet. Select text to highlight.</p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="sidebar-section">
+                                <h3><i class="fas fa-cog"></i> Export Options</h3>
+                                <div class="export-controls">
+                                    <div class="control-group">
+                                        <label for="exportFormat">Export Format:</label>
+                                        <select id="exportFormat">
+                                            <option value="markdown">Markdown (.md)</option>
+                                            <option value="text">Plain Text (.txt)</option>
+                                            <option value="json">JSON (.json)</option>
+                                            <option value="html">HTML (.html)</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <div class="control-group">
+                                        <label for="includePageNumbers">
+                                            <input type="checkbox" id="includePageNumbers" checked>
+                                            Include Page Numbers
+                                        </label>
+                                    </div>
+                                    
+                                    <div class="export-actions">
+                                        <button id="exportHighlights" class="btn btn-primary">
+                                            <i class="fas fa-download"></i> Export Highlights
+                                        </button>
+                                        <button id="exportMarkdown" class="btn btn-secondary">
+                                            <i class="fab fa-markdown"></i> Export as Markdown
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="sidebar-section">
+                                <h3><i class="fas fa-info-circle"></i> Statistics</h3>
+                                <div class="stats">
+                                    <div class="stat-item">
+                                        <span class="stat-label">Total Highlights:</span>
+                                        <span class="stat-value" id="totalHighlights">0</span>
+                                    </div>
+                                    <div class="stat-item">
+                                        <span class="stat-label">Current Page:</span>
+                                        <span class="stat-value" id="pageHighlights">0</span>
+                                    </div>
+                                    <div class="stat-item">
+                                        <span class="stat-label">Last Highlight:</span>
+                                        <span class="stat-value" id="lastHighlight">Never</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="progress-container hidden" id="progressContainer">
+                    <div class="progress-header">
+                        <h3>Loading PDF...</h3>
+                        <span id="progressText">0%</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill"></div>
+                    </div>
+                </div>
+
+                <div class="error-container hidden" id="errorContainer">
+                    <!-- Errors will be shown here -->
+                </div>
+            </div>
+
+            <div class="info-box">
+                <h3><i class="fas fa-lightbulb"></i> How to Use</h3>
+                <ul>
+                    <li><strong>Upload PDF:</strong> Drag and drop or click to select a PDF file</li>
+                    <li><strong>Navigate:</strong> Use Previous/Next buttons or arrow keys</li>
+                    <li><strong>Highlight:</strong> Click "Highlight Mode" then select text with mouse</li>
+                    <li><strong>Change Color:</strong> Click color buttons to switch highlight colors</li>
+                    <li><strong>Download:</strong> Click "Download PDF" to save highlighted PDF</li>
+                    <li><strong>Export:</strong> Click "Export Highlights" to save your notes</li>
+                </ul>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-brand">
+                    <i class="fas fa-lock"></i>
+                    <span>PrivacyTools</span>
+                </div>
+                <p class="footer-tagline">Free, client-side image and PDF tools that respect your privacy.</p>
+                <p class="copyright">© 2024 PrivacyTools. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Include PDF.js library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <!-- Include jsPDF for PDF export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // DOM Elements
+            const dropArea = document.getElementById('dropArea');
+            const fileInput = document.getElementById('fileInput');
+            const pdfViewer = document.getElementById('pdfViewer');
+            const pdfCanvas = document.getElementById('pdfCanvas');
+            const selectionOverlay = document.getElementById('selectionOverlay');
+            const currentPageEl = document.getElementById('currentPage');
+            const totalPagesEl = document.getElementById('totalPages');
+            const zoomLevelEl = document.getElementById('zoomLevel');
+            const prevPageBtn = document.getElementById('prevPage');
+            const nextPageBtn = document.getElementById('nextPage');
+            const zoomInBtn = document.getElementById('zoomIn');
+            const zoomOutBtn = document.getElementById('zoomOut');
+            const toggleHighlightBtn = document.getElementById('toggleHighlight');
+            const highlightStatusEl = document.getElementById('highlightStatus');
+            const clearHighlightsBtn = document.getElementById('clearHighlights');
+            const colorOptions = document.querySelectorAll('.color-option');
+            const highlightsList = document.getElementById('highlightsList');
+            const totalHighlightsEl = document.getElementById('totalHighlights');
+            const pageHighlightsEl = document.getElementById('pageHighlights');
+            const lastHighlightEl = document.getElementById('lastHighlight');
+            const exportHighlightsBtn = document.getElementById('exportHighlights');
+            const exportMarkdownBtn = document.getElementById('exportMarkdown');
+            const exportFormat = document.getElementById('exportFormat');
+            const includePageNumbers = document.getElementById('includePageNumbers');
+            const downloadPdfBtn = document.getElementById('downloadPdf');
+            const progressContainer = document.getElementById('progressContainer');
+            const progressFill = document.getElementById('progressFill');
+            const progressText = document.getElementById('progressText');
+            const errorContainer = document.getElementById('errorContainer');
+
+            // State
+            let pdfDoc = null;
+            let currentPageNum = 1;
+            let scale = 1.0;
+            let isHighlightMode = true;
+            let selectedColor = 'yellow';
+            let ctx = pdfCanvas.getContext('2d');
+            let isSelecting = false;
+            let selectionStart = { x: 0, y: 0 };
+            let selectionEnd = { x: 0, y: 0 };
+            let canvasRect = null;
+            let originalPdfData = null;
+            
+            // Store highlights
+            let highlights = new Map(); // page -> array of highlights
+
+            // Color mapping
+            const colors = {
+                yellow: '#FFEB3B',
+                green: '#4CAF50',
+                blue: '#2196F3',
+                pink: '#E91E63',
+                orange: '#FF9800'
+            };
+
+            // Initialize
+            function init() {
+                // File input change
+                fileInput.addEventListener('change', handleFileSelect);
+                
+                // Navigation controls
+                prevPageBtn.addEventListener('click', goToPrevPage);
+                nextPageBtn.addEventListener('click', goToNextPage);
+                zoomInBtn.addEventListener('click', () => changeZoom(0.2));
+                zoomOutBtn.addEventListener('click', () => changeZoom(-0.2));
+                
+                // Highlight controls
+                toggleHighlightBtn.addEventListener('click', toggleHighlightMode);
+                clearHighlightsBtn.addEventListener('click', clearAllHighlights);
+                
+                // Color picker
+                colorOptions.forEach(option => {
+                    option.addEventListener('click', () => selectColor(option.dataset.color));
+                });
+                
+                // Export controls
+                exportHighlightsBtn.addEventListener('click', exportHighlightsData);
+                exportMarkdownBtn.addEventListener('click', exportAsMarkdown);
+                
+                // Download PDF
+                downloadPdfBtn.addEventListener('click', downloadHighlightedPdf);
+                
+                // Canvas events
+                pdfCanvas.addEventListener('mousedown', startSelection);
+                pdfCanvas.addEventListener('mousemove', updateSelection);
+                pdfCanvas.addEventListener('mouseup', endSelection);
+                pdfCanvas.addEventListener('mouseleave', cancelSelection);
+                
+                // Keyboard shortcuts
+                document.addEventListener('keydown', handleKeyboardShortcuts);
+                
+                // Drag and drop setup
+                setupDragAndDrop();
+                
+                // Initialize with yellow selected
+                selectColor('yellow');
+                
+                // Set PDF.js worker
+                pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+            }
+
+            function setupDragAndDrop() {
+                ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                    dropArea.addEventListener(eventName, preventDefaults, false);
+                    document.body.addEventListener(eventName, preventDefaults, false);
+                });
+                
+                ['dragenter', 'dragover'].forEach(eventName => {
+                    dropArea.addEventListener(eventName, highlight, false);
+                });
+                
+                ['dragleave', 'drop'].forEach(eventName => {
+                    dropArea.addEventListener(eventName, unhighlight, false);
+                });
+                
+                dropArea.addEventListener('drop', handleDrop, false);
+                dropArea.addEventListener('click', () => fileInput.click());
+            }
+
+            function preventDefaults(e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+
+            function highlight() {
+                dropArea.classList.add('drag-over');
+            }
+
+            function unhighlight() {
+                dropArea.classList.remove('drag-over');
+            }
+
+            function handleDrop(e) {
+                const dt = e.dataTransfer;
+                const droppedFiles = dt.files;
+                handleFileSelect({ target: { files: droppedFiles } });
+            }
+
+            async function handleFileSelect(e) {
+                const selectedFiles = e.target.files;
+                hideError();
+                
+                if (selectedFiles.length === 0) return;
+                
+                const file = selectedFiles[0];
+                
+                if (file.type !== 'application/pdf' && !file.name.toLowerCase().endsWith('.pdf')) {
+                    showError('Please select a PDF file');
+                    return;
+                }
+                
+                if (file.size > 50 * 1024 * 1024) {
+                    showError('File exceeds 50MB limit');
+                    return;
+                }
+                
+                try {
+                    showProgress(0);
+                    
+                    // Save original PDF data for download
+                    const arrayBuffer = await file.arrayBuffer();
+                    originalPdfData = new Uint8Array(arrayBuffer);
+                    
+                    showProgress(30);
+                    
+                    // Load PDF document for viewing
+                    pdfDoc = await pdfjsLib.getDocument({ data: originalPdfData }).promise;
+                    showProgress(70);
+                    
+                    // Reset state
+                    currentPageNum = 1;
+                    scale = 1.0;
+                    highlights.clear();
+                    isHighlightMode = true;
+                    
+                    // Update UI
+                    totalPagesEl.textContent = pdfDoc.numPages;
+                    zoomLevelEl.textContent = '100%';
+                    pdfViewer.classList.remove('hidden');
+                    
+                    // Load first page
+                    await renderPage();
+                    showProgress(100);
+                    
+                    setTimeout(() => {
+                        progressContainer.classList.add('hidden');
+                    }, 500);
+                    
+                    showNotification('PDF loaded successfully! You can now highlight text.', 'success');
+                    
+                } catch (error) {
+                    console.error('Error loading PDF:', error);
+                    showError(`Failed to load PDF: ${error.message}`);
+                    progressContainer.classList.add('hidden');
+                }
+            }
+
+            async function renderPage() {
+                if (!pdfDoc) return;
+                
+                const page = await pdfDoc.getPage(currentPageNum);
+                const viewport = page.getViewport({ scale: scale });
+                
+                // Set canvas dimensions
+                pdfCanvas.height = viewport.height;
+                pdfCanvas.width = viewport.width;
+                
+                // Store canvas rect for coordinate conversion
+                canvasRect = pdfCanvas.getBoundingClientRect();
+                
+                // Clear canvas
+                ctx.clearRect(0, 0, pdfCanvas.width, pdfCanvas.height);
+                
+                // Render PDF page
+                const renderContext = {
+                    canvasContext: ctx,
+                    viewport: viewport
+                };
+                
+                await page.render(renderContext).promise;
+                
+                // Draw existing highlights for this page
+                drawHighlights();
+                
+                // Update page info
+                currentPageEl.textContent = currentPageNum;
+            }
+
+            function getCanvasCoordinates(clientX, clientY) {
+                if (!canvasRect) {
+                    canvasRect = pdfCanvas.getBoundingClientRect();
+                }
+                
+                const x = (clientX - canvasRect.left) * (pdfCanvas.width / canvasRect.width);
+                const y = (clientY - canvasRect.top) * (pdfCanvas.height / canvasRect.height);
+                
+                return { x, y };
+            }
+
+            function startSelection(e) {
+                if (!isHighlightMode || !pdfDoc) return;
+                
+                const coords = getCanvasCoordinates(e.clientX, e.clientY);
+                selectionStart = coords;
+                isSelecting = true;
+                selectionEnd = { ...coords };
+                
+                updateSelectionVisual();
+            }
+
+            function updateSelection(e) {
+                if (!isSelecting || !pdfDoc) return;
+                
+                const coords = getCanvasCoordinates(e.clientX, e.clientY);
+                selectionEnd = coords;
+                
+                updateSelectionVisual();
+            }
+
+            function endSelection() {
+                if (!isSelecting || !pdfDoc) return;
+                
+                isSelecting = false;
+                
+                // Calculate selection rectangle
+                const x = Math.min(selectionStart.x, selectionEnd.x);
+                const y = Math.min(selectionStart.y, selectionEnd.y);
+                const width = Math.abs(selectionEnd.x - selectionStart.x);
+                const height = Math.abs(selectionEnd.y - selectionStart.y);
+                
+                // Only create highlight if selection is large enough
+                if (width > 10 && height > 10) {
+                    createHighlight(x, y, width, height);
+                }
+                
+                // Clear selection overlay
+                selectionOverlay.innerHTML = '';
+            }
+
+            function cancelSelection() {
+                if (!isSelecting) return;
+                
+                isSelecting = false;
+                selectionOverlay.innerHTML = '';
+            }
+
+            function updateSelectionVisual() {
+                const x = Math.min(selectionStart.x, selectionEnd.x);
+                const y = Math.min(selectionStart.y, selectionEnd.y);
+                const width = Math.abs(selectionEnd.x - selectionStart.x);
+                const height = Math.abs(selectionEnd.y - selectionStart.y);
+                
+                selectionOverlay.innerHTML = `
+                    <div style="
+                        position: absolute;
+                        left: ${x}px;
+                        top: ${y}px;
+                        width: ${width}px;
+                        height: ${height}px;
+                        background-color: ${colors[selectedColor]}33;
+                        border: 2px solid ${colors[selectedColor]};
+                        pointer-events: none;
+                        z-index: 10;
+                        mix-blend-mode: multiply;
+                    "></div>
+                `;
+            }
+
+            function createHighlight(x, y, width, height) {
+                if (!pdfDoc) return;
+                
+                const highlightId = Date.now() + Math.random();
+                const highlight = {
+                    id: highlightId,
+                    x: x,
+                    y: y,
+                    width: width,
+                    height: height,
+                    color: selectedColor,
+                    page: currentPageNum,
+                    timestamp: new Date().toISOString(),
+                    text: `Highlight on page ${currentPageNum}`
+                };
+                
+                if (!highlights.has(currentPageNum)) {
+                    highlights.set(currentPageNum, []);
+                }
+                highlights.get(currentPageNum).push(highlight);
+                
+                // Redraw page with highlight
+                drawHighlights();
+                
+                updateHighlightsList();
+                updateStatistics();
+                
+                showNotification('Text highlighted!', 'success');
+            }
+
+            function drawHighlights() {
+                if (!pdfDoc || !highlights.has(currentPageNum)) return;
+                
+                const pageHighlights = highlights.get(currentPageNum);
+                
+                // Draw highlights on top of the PDF
+                pageHighlights.forEach(highlight => {
+                    ctx.save();
+                    ctx.globalAlpha = 0.3;
+                    ctx.globalCompositeOperation = 'multiply';
+                    ctx.fillStyle = colors[highlight.color];
+                    ctx.fillRect(highlight.x, highlight.y, highlight.width, highlight.height);
+                    ctx.restore();
+                    
+                    // Optional: Add a subtle border
+                    ctx.strokeStyle = colors[highlight.color];
+                    ctx.lineWidth = 1;
+                    ctx.strokeRect(highlight.x, highlight.y, highlight.width, highlight.height);
+                });
+            }
+
+            function updateHighlightsList() {
+                const pageHighlightsList = highlights.get(currentPageNum) || [];
+                const allHighlights = Array.from(highlights.values()).flat();
+                
+                if (pageHighlightsList.length === 0) {
+                    highlightsList.innerHTML = `
+                        <div class="no-highlights">
+                            <i class="fas fa-highlighter"></i>
+                            <p>No highlights on this page. Select text to highlight.</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                highlightsList.innerHTML = '';
+                
+                pageHighlightsList.sort((a, b) => a.y - b.y).forEach(highlight => {
+                    const highlightEl = document.createElement('div');
+                    highlightEl.className = `highlight-item ${highlight.color}`;
+                    highlightEl.innerHTML = `
+                        <div class="highlight-header">
+                            <span class="highlight-page">Page ${highlight.page}</span>
+                            <div class="highlight-color" style="background-color: ${colors[highlight.color]}"></div>
+                        </div>
+                        <div class="highlight-text">"${escapeHtml(highlight.text)}"</div>
+                        <div class="highlight-actions">
+                            <button class="btn btn-secondary btn-tiny delete-highlight" data-id="${highlight.id}">
+                                <i class="fas fa-trash"></i> Delete
+                            </button>
+                        </div>
+                    `;
+                    
+                    highlightsList.appendChild(highlightEl);
+                });
+                
+                highlightsList.querySelectorAll('.delete-highlight').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const id = this.dataset.id;
+                        deleteHighlight(id);
+                    });
+                });
+            }
+
+            function deleteHighlight(id) {
+                for (const [page, pageHighlights] of highlights) {
+                    const index = pageHighlights.findIndex(h => h.id == id);
+                    if (index !== -1) {
+                        pageHighlights.splice(index, 1);
+                        if (pageHighlights.length === 0) {
+                            highlights.delete(page);
+                        }
+                        break;
+                    }
+                }
+                
+                // Redraw page without the deleted highlight
+                renderPage();
+                updateHighlightsList();
+                updateStatistics();
+                
+                showNotification('Highlight deleted', 'info');
+            }
+
+            function updateStatistics() {
+                const pageHighlightsList = highlights.get(currentPageNum) || [];
+                const allHighlights = Array.from(highlights.values()).flat();
+                
+                totalHighlightsEl.textContent = allHighlights.length;
+                pageHighlightsEl.textContent = pageHighlightsList.length;
+                
+                if (allHighlights.length > 0) {
+                    const last = allHighlights[allHighlights.length - 1];
+                    const date = new Date(last.timestamp);
+                    lastHighlightEl.textContent = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                } else {
+                    lastHighlightEl.textContent = 'Never';
+                }
+            }
+
+            function goToPrevPage() {
+                if (!pdfDoc || currentPageNum <= 1) return;
+                
+                currentPageNum--;
+                renderPage();
+                updateHighlightsList();
+            }
+
+            function goToNextPage() {
+                if (!pdfDoc || currentPageNum >= pdfDoc.numPages) return;
+                
+                currentPageNum++;
+                renderPage();
+                updateHighlightsList();
+            }
+
+            function changeZoom(delta) {
+                if (!pdfDoc) return;
+                
+                scale = Math.max(0.5, Math.min(3, scale + delta));
+                zoomLevelEl.textContent = `${Math.round(scale * 100)}%`;
+                renderPage();
+            }
+
+            function toggleHighlightMode() {
+                isHighlightMode = !isHighlightMode;
+                highlightStatusEl.textContent = isHighlightMode ? 'ON' : 'OFF';
+                
+                if (isHighlightMode) {
+                    toggleHighlightBtn.classList.add('btn-primary');
+                    toggleHighlightBtn.classList.remove('btn-secondary');
+                    showNotification('Highlight mode enabled', 'info');
+                } else {
+                    toggleHighlightBtn.classList.remove('btn-primary');
+                    toggleHighlightBtn.classList.add('btn-secondary');
+                    showNotification('Highlight mode disabled', 'info');
+                }
+            }
+
+            function selectColor(color) {
+                selectedColor = color;
+                
+                colorOptions.forEach(option => {
+                    if (option.dataset.color === color) {
+                        option.classList.add('active');
+                    } else {
+                        option.classList.remove('active');
+                    }
+                });
+            }
+
+            function clearAllHighlights() {
+                if (!pdfDoc || highlights.size === 0) return;
+                
+                if (confirm('Are you sure you want to clear all highlights? This cannot be undone.')) {
+                    highlights.clear();
+                    renderPage();
+                    updateHighlightsList();
+                    updateStatistics();
+                    showNotification('All highlights cleared', 'info');
+                }
+            }
+
+            async function downloadHighlightedPdf() {
+                if (!pdfDoc) {
+                    showError('Please upload a PDF first');
+                    return;
+                }
+                
+                try {
+                    showProgress(0);
+                    showNotification('Creating highlighted PDF...', 'info');
+                    
+                    // For a simple solution, we'll create an image of the current page with highlights
+                    // A more advanced solution would use jsPDF to create an actual PDF
+                    
+                    // Create a temporary canvas with the PDF and highlights
+                    const tempCanvas = document.createElement('canvas');
+                    const tempCtx = tempCanvas.getContext('2d');
+                    
+                    // Render current page to temp canvas
+                    const page = await pdfDoc.getPage(currentPageNum);
+                    const viewport = page.getViewport({ scale: 1.5 }); // Higher quality for download
+                    
+                    tempCanvas.width = viewport.width;
+                    tempCanvas.height = viewport.height;
+                    
+                    const renderContext = {
+                        canvasContext: tempCtx,
+                        viewport: viewport
+                    };
+                    
+                    await page.render(renderContext).promise;
+                    
+                    // Draw highlights
+                    const pageHighlights = highlights.get(currentPageNum) || [];
+                    pageHighlights.forEach(highlight => {
+                        // Scale highlight coordinates for temp canvas
+                        const scaleFactor = 1.5 / scale;
+                        const x = highlight.x * scaleFactor;
+                        const y = highlight.y * scaleFactor;
+                        const width = highlight.width * scaleFactor;
+                        const height = highlight.height * scaleFactor;
+                        
+                        tempCtx.save();
+                        tempCtx.globalAlpha = 0.3;
+                        tempCtx.globalCompositeOperation = 'multiply';
+                        tempCtx.fillStyle = colors[highlight.color];
+                        tempCtx.fillRect(x, y, width, height);
+                        tempCtx.restore();
+                    });
+                    
+                    // Create download link
+                    const link = document.createElement('a');
+                    link.download = `highlighted-page-${currentPageNum}.png`;
+                    link.href = tempCanvas.toDataURL('image/png');
+                    link.click();
+                    
+                    showProgress(100);
+                    setTimeout(() => {
+                        progressContainer.classList.add('hidden');
+                    }, 500);
+                    
+                    showNotification('Highlighted page downloaded as image!', 'success');
+                    
+                } catch (error) {
+                    console.error('Error creating highlighted PDF:', error);
+                    showError('Failed to create highlighted PDF');
+                    progressContainer.classList.add('hidden');
+                }
+            }
+
+            function handleKeyboardShortcuts(e) {
+                if (!pdfDoc) return;
+                
+                if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) {
+                    return;
+                }
+                
+                switch (e.key) {
+                    case ' ':
+                        if (!e.shiftKey) {
+                            e.preventDefault();
+                            goToNextPage();
+                        }
+                        break;
+                    case 'ArrowRight':
+                        goToNextPage();
+                        break;
+                    case 'ArrowLeft':
+                        goToPrevPage();
+                        break;
+                    case 'h':
+                    case 'H':
+                        e.preventDefault();
+                        toggleHighlightMode();
+                        break;
+                    case '+':
+                    case '=':
+                        if (e.ctrlKey || e.metaKey) {
+                            e.preventDefault();
+                            changeZoom(0.2);
+                        }
+                        break;
+                    case '-':
+                    case '_':
+                        if (e.ctrlKey || e.metaKey) {
+                            e.preventDefault();
+                            changeZoom(-0.2);
+                        }
+                        break;
+                    case '0':
+                        if (e.ctrlKey || e.metaKey) {
+                            e.preventDefault();
+                            scale = 1.0;
+                            zoomLevelEl.textContent = '100%';
+                            renderPage();
+                        }
+                        break;
+                }
+            }
+
+            function exportHighlightsData() {
+                const allHighlights = Array.from(highlights.values()).flat();
+                
+                if (allHighlights.length === 0) {
+                    showError('No highlights to export');
+                    return;
+                }
+                
+                const format = exportFormat.value;
+                let data, filename, mimeType;
+                
+                switch (format) {
+                    case 'markdown':
+                        data = generateMarkdown(allHighlights);
+                        filename = `highlights_${new Date().toISOString().split('T')[0]}.md`;
+                        mimeType = 'text/markdown';
+                        break;
+                    case 'text':
+                        data = generatePlainText(allHighlights);
+                        filename = `highlights_${new Date().toISOString().split('T')[0]}.txt`;
+                        mimeType = 'text/plain';
+                        break;
+                    case 'json':
+                        data = JSON.stringify(allHighlights, null, 2);
+                        filename = `highlights_${new Date().toISOString().split('T')[0]}.json`;
+                        mimeType = 'application/json';
+                        break;
+                    case 'html':
+                        data = generateHTML(allHighlights);
+                        filename = `highlights_${new Date().toISOString().split('T')[0]}.html`;
+                        mimeType = 'text/html';
+                        break;
+                }
+                
+                downloadFile(data, filename, mimeType);
+                showNotification(`Exported ${allHighlights.length} highlights as ${format.toUpperCase()}`, 'success');
+            }
+
+            function exportAsMarkdown() {
+                exportFormat.value = 'markdown';
+                exportHighlightsData();
+            }
+
+            function generateMarkdown(highlights) {
+                const includePages = includePageNumbers.checked;
+                
+                let markdown = `# PDF Highlights\n\n`;
+                markdown += `**Date:** ${new Date().toLocaleDateString()}\n`;
+                markdown += `**Total Highlights:** ${highlights.length}\n\n`;
+                
+                // Group by page
+                const grouped = {};
+                highlights.forEach(h => {
+                    if (!grouped[h.page]) grouped[h.page] = [];
+                    grouped[h.page].push(h);
+                });
+                
+                // Sort by page number
+                Object.keys(grouped).sort((a, b) => a - b).forEach(page => {
+                    markdown += `## Page ${page}\n\n`;
+                    grouped[page].forEach(h => {
+                        markdown += `> ${h.text}\n\n`;
+                    });
+                });
+                
+                return markdown;
+            }
+
+            function generatePlainText(highlights) {
+                let text = `PDF Highlights\n`;
+                text += `Date: ${new Date().toLocaleDateString()}\n`;
+                text += `Total Highlights: ${highlights.length}\n\n`;
+                
+                highlights.forEach((h, index) => {
+                    text += `${index + 1}. [Page ${h.page}] ${h.text}\n`;
+                });
+                
+                return text;
+            }
+
+            function generateHTML(highlights) {
+                let html = `<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>PDF Highlights</title>
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; margin: 2rem; }
+        .highlight { border-left: 4px solid #FFEB3B; padding: 1rem; margin: 1rem 0; background: #f9f9f9; }
+        .page-number { color: #666; font-size: 0.9rem; }
+        .timestamp { color: #999; font-size: 0.8rem; }
+        h1 { color: #333; }
+    </style>
+</head>
+<body>
+    <h1>PDF Highlights</h1>
+    <p><strong>Date:</strong> ${new Date().toLocaleDateString()}</p>
+    <p><strong>Total Highlights:</strong> ${highlights.length}</p>
+    <hr>
+`;
+                
+                highlights.forEach(h => {
+                    const color = colors[h.color];
+                    html += `
+    <div class="highlight" style="border-left-color: ${color};">
+        <div class="page-number">Page ${h.page}</div>
+        <p>${escapeHtml(h.text)}</p>
+        <div class="timestamp">${new Date(h.timestamp).toLocaleString()}</div>
+    </div>
+`;
+                });
+                
+                html += `</body></html>`;
+                return html;
+            }
+
+            function downloadFile(content, filename, mimeType) {
+                const blob = new Blob([content], { type: mimeType });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }
+
+            function showProgress(percentage) {
+                progressContainer.classList.remove('hidden');
+                progressFill.style.width = `${percentage}%`;
+                progressText.textContent = `${Math.round(percentage)}%`;
+            }
+
+            function showError(message) {
+                errorContainer.classList.remove('hidden');
+                errorContainer.innerHTML = `
+                    <i class="fas fa-exclamation-circle"></i>
+                    <span>${escapeHtml(message)}</span>
+                `;
+                
+                setTimeout(() => {
+                    hideError();
+                }, 5000);
+            }
+
+            function hideError() {
+                errorContainer.classList.add('hidden');
+            }
+
+            function showNotification(message, type = 'info') {
+                const notification = document.createElement('div');
+                notification.className = `notification notification-${type}`;
+                notification.style.cssText = `
+                    position: fixed;
+                    top: 20px;
+                    right: 20px;
+                    padding: 1rem 1.5rem;
+                    color: white;
+                    border-radius: 8px;
+                    display: flex;
+                    align-items: center;
+                    gap: 10px;
+                    z-index: 9999;
+                    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+                    animation: slideIn 0.3s ease;
+                `;
+                
+                const bgColor = type === 'success' 
+                    ? 'linear-gradient(135deg, #4cc9f0 0%, #4361ee 100%)'
+                    : 'linear-gradient(135deg, #f72585 0%, #b5179e 100%)';
+                notification.style.background = bgColor;
+                
+                const icon = type === 'success' ? 'check-circle' : 'exclamation-circle';
+                notification.innerHTML = `
+                    <i class="fas fa-${icon}"></i>
+                    <span>${escapeHtml(message)}</span>
+                    <button class="notification-close" style="background: none; border: none; color: inherit; margin-left: 10px; cursor: pointer;">
+                        <i class="fas fa-times"></i>
+                    </button>
+                `;
+                
+                document.body.appendChild(notification);
+                
+                notification.querySelector('.notification-close').addEventListener('click', () => {
+                    notification.remove();
+                });
+                
+                setTimeout(() => {
+                    if (notification.parentNode) {
+                        notification.remove();
+                    }
+                }, 3000);
+            }
+
+            // Utility functions
+            function escapeHtml(text) {
+                const div = document.createElement('div');
+                div.textContent = text;
+                return div.innerHTML;
+            }
+
+            // Initialize
+            init();
+        });
+    </script>
+</body>
+</html>
